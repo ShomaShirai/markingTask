@@ -3,12 +3,14 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog
 from PIL import Image, ImageTk
 import random
+import time
 
 from services.ui_actions import (
     browse_path,
     blend_and_get_image,
     resize_for_canvas,
     save_with_canvas,
+    append_metrics_for_image,
 )
 from domain.type import MIP_LINE_COLOR, VEIN_LINE_COLOR, LINE_WIDTH, Stroke
 from services.user_service import set_current_user
@@ -44,6 +46,15 @@ class MainWindow(tk.Tk):
         self.display_image = None  # 表示用にリサイズしたPIL画像
         self.rotation_angle = 0.0  # 現在の回転角度（度）
         self.rotation_step = 10.0  # 次へで回す角度ステップ（度）
+
+        # 計測用状態
+        self._task_start_ts: float | None = None
+        self._active_mode: str | None = None  # 'mip' | 'vein'
+        self._timing_record: dict[str, dict[str, int | None]] = {
+            "mip": {"start_latency_ms": None, "stroke_duration_ms": None},
+            "vein": {"start_latency_ms": None, "stroke_duration_ms": None},
+        }
+        self._current_stroke_start_ts: float | None = None
 
         # 描画状態
         self.current_draw_color = None
@@ -188,6 +199,13 @@ class MainWindow(tk.Tk):
         # 回転角度をランダムに（10度刻み）選択して再ブレンド
         candidates = list(range(0, 360, 10))
         self.rotation_angle = float(random.choice(candidates))
+        # 計測リセットとタスク開始
+        self._timing_record = {
+            "mip": {"start_latency_ms": None, "stroke_duration_ms": None},
+            "vein": {"start_latency_ms": None, "stroke_duration_ms": None},
+        }
+        self._current_stroke_start_ts = None
+        self._task_start_ts = time.perf_counter()
         self._on_blend()
 
     def _show_image(self, pil_img: Image.Image):
@@ -215,6 +233,22 @@ class MainWindow(tk.Tk):
         )
         path = save_with_canvas(base_img, strokes)
         if path:
+            # 計測CSVへ追記（モードごとに1行）
+            try:
+                rows = []
+                for mode_key in ("mip", "vein"):
+                    rec = self._timing_record.get(mode_key, {})
+                    rows.append(
+                        {
+                            "mode": mode_key,
+                            "start_latency_ms": rec.get("start_latency_ms"),
+                            "stroke_duration_ms": rec.get("stroke_duration_ms"),
+                            "rotation_deg": self.rotation_angle,
+                        }
+                    )
+                append_metrics_for_image(path, rows)
+            except Exception as e:
+                messagebox.showwarning("計測保存", f"計測結果の保存に失敗: {e}")
             messagebox.showinfo("保存", f"保存しました: {path}")
 
     def _prompt_username(self):
@@ -235,9 +269,11 @@ class MainWindow(tk.Tk):
             self.current_draw_color = None
             self.last_xy = None
             self._update_mode_buttons(active=None)
+            self._active_mode = None
         else:
             self.current_draw_color = MIP_LINE_COLOR
             self._update_mode_buttons(active="mip")
+            self._active_mode = "mip"
 
     def _set_mode_vein(self):
         # すでに血管モードならトグルで停止
@@ -245,13 +281,27 @@ class MainWindow(tk.Tk):
             self.current_draw_color = None
             self.last_xy = None
             self._update_mode_buttons(active=None)
+            self._active_mode = None
         else:
             self.current_draw_color = VEIN_LINE_COLOR
             self._update_mode_buttons(active="vein")
+            self._active_mode = "vein"
 
     def _on_canvas_down(self, event):
         if not self.current_draw_color:
             return
+        # 計測（開始点まで）
+        now = time.perf_counter()
+        if (
+            self._active_mode in ("mip", "vein")
+            and self._task_start_ts is not None
+            and self._timing_record[self._active_mode]["start_latency_ms"] is None
+        ):
+            self._timing_record[self._active_mode]["start_latency_ms"] = int(
+                (now - self._task_start_ts) * 1000
+            )
+        # ストローク開始
+        self._current_stroke_start_ts = now
         self.last_xy = (event.x, event.y)
 
     def _on_canvas_move(self, event):
@@ -273,6 +323,15 @@ class MainWindow(tk.Tk):
         self.last_xy = (x1, y1)
 
     def _on_canvas_up(self, event):
+        # 計測（ストローク継続時間）
+        if (
+            self._current_stroke_start_ts is not None
+            and self._active_mode in ("mip", "vein")
+            and self._timing_record[self._active_mode]["stroke_duration_ms"] is None
+        ):
+            dur_ms = int((time.perf_counter() - self._current_stroke_start_ts) * 1000)
+            self._timing_record[self._active_mode]["stroke_duration_ms"] = dur_ms
+        self._current_stroke_start_ts = None
         self.last_xy = None
 
     def _on_clear(self):

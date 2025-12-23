@@ -1,4 +1,5 @@
 import os
+import csv
 from datetime import datetime
 import tkinter as tk
 from tkinter import filedialog
@@ -73,3 +74,46 @@ def save_with_canvas(base_img: Image.Image, strokes: list[Stroke]) -> str | None
 
     composed.save(out_path)
     return out_path
+
+
+def append_metrics_for_image(image_path: str, rows: list[dict]) -> str:
+    """同じ保存ディレクトリに metrics.csv を作成/追記する。
+    rows: {mode, start_latency_ms, stroke_duration_ms, rotation_deg}
+    return: CSVファイルのパス
+    """
+    out_dir = os.path.dirname(image_path)
+    csv_path = os.path.join(out_dir, "metrics.csv")
+
+    # 画像ID抽出（image_{id}.png）
+    base = os.path.basename(image_path)
+    image_id = os.path.splitext(base)[0]
+    if image_id.startswith("image_"):
+        image_id = image_id[len("image_") :]
+
+    fieldnames = [
+        "image_id",
+        "mode",
+        "start_latency_ms",
+        "stroke_duration_ms",
+        "rotation_deg",
+        "saved_at",
+    ]
+    write_header = not os.path.exists(csv_path)
+
+    with open(csv_path, mode="a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        if write_header:
+            writer.writeheader()
+        saved_at = datetime.now().isoformat(timespec="seconds")
+        for r in rows:
+            writer.writerow(
+                {
+                    "image_id": image_id,
+                    "mode": r.get("mode"),
+                    "start_latency_ms": r.get("start_latency_ms"),
+                    "stroke_duration_ms": r.get("stroke_duration_ms"),
+                    "rotation_deg": r.get("rotation_deg"),
+                    "saved_at": saved_at,
+                }
+            )
+    return csv_path

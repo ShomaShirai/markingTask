@@ -43,6 +43,20 @@ class TransformParams:
     rotation: float = 0.0
 
 
+# 計測レコード
+@dataclass
+class TimingRecord:
+    mode: str  # 'mip' | 'vein'
+    start_latency_ms: int | None = None
+    stroke_duration_ms: int | None = None
+
+
+@dataclass
+class SessionMetrics:
+    mip: TimingRecord
+    vein: TimingRecord
+
+
 # 保存規則（Domain層で定義し、Services層で利用）
 @dataclass
 class SaveRule:
