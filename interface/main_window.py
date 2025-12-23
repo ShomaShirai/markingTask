@@ -2,6 +2,7 @@ import os
 import tkinter as tk
 from tkinter import messagebox, simpledialog
 from PIL import Image, ImageTk
+import random
 
 from services.ui_actions import (
     browse_path,
@@ -184,8 +185,9 @@ class MainWindow(tk.Tk):
             messagebox.showerror("処理失敗", str(e))
 
     def _on_next(self):
-        # 回転角度を更新して再ブレンド
-        self.rotation_angle = (self.rotation_angle + self.rotation_step) % 360.0
+        # 回転角度をランダムに（10度刻み）選択して再ブレンド
+        candidates = list(range(0, 360, 10))
+        self.rotation_angle = float(random.choice(candidates))
         self._on_blend()
 
     def _show_image(self, pil_img: Image.Image):
