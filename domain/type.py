@@ -34,6 +34,13 @@ class Stroke:
     points: list[tuple[float, float]]
     color: str
     width: int
+    rotation: float = 0.0
+
+
+@dataclass
+class TransformParams:
+    # 画像全体に適用する回転角度（度数法）
+    rotation: float = 0.0
 
 
 # 保存規則（Domain層で定義し、Services層で利用）

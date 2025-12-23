@@ -41,6 +41,8 @@ class MainWindow(tk.Tk):
         self.photo = None  # ImageTk.PhotoImage（参照保持用）
         self.canvas_img_id = None  # キャンバス上の画像アイテムID
         self.display_image = None  # 表示用にリサイズしたPIL画像
+        self.rotation_angle = 0.0  # 現在の回転角度（度）
+        self.rotation_step = 10.0  # 次へで回す角度ステップ（度）
 
         # 描画状態
         self.current_draw_color = None
@@ -147,9 +149,13 @@ class MainWindow(tk.Tk):
             bg="#4CAF50",
             fg="#FFFFFF",
         ).pack(side=tk.LEFT, padx=6)
-        tk.Button(saveNextBtns, text="  次へ行く  ", bg="#2196F3", fg="#FFFFFF").pack(
-            side=tk.LEFT, padx=6
-        )
+        tk.Button(
+            saveNextBtns,
+            text="  次へ行く  ",
+            command=self._on_next,
+            bg="#2196F3",
+            fg="#FFFFFF",
+        ).pack(side=tk.LEFT, padx=6)
 
         # ボタンのデフォルト色を保持
         self._default_btn_bg = self.btn_mip.cget("bg")
@@ -166,11 +172,21 @@ class MainWindow(tk.Tk):
         fg = self.fg_var.get().strip()
         try:
             self.result_image = blend_and_get_image(
-                bg, mid, fg, float(self.alpha_mid.get()), float(self.alpha_fg.get())
+                bg,
+                mid,
+                fg,
+                float(self.alpha_mid.get()),
+                float(self.alpha_fg.get()),
+                rotation_deg=self.rotation_angle,
             )
             self._show_image(self.result_image)
         except Exception as e:
             messagebox.showerror("処理失敗", str(e))
+
+    def _on_next(self):
+        # 回転角度を更新して再ブレンド
+        self.rotation_angle = (self.rotation_angle + self.rotation_step) % 360.0
+        self._on_blend()
 
     def _show_image(self, pil_img: Image.Image):
         # キャンバスに収まるよう簡易リサイズ

@@ -25,6 +25,27 @@ def ensure_size(ref: np.ndarray, other: np.ndarray) -> np.ndarray:
     return cv.resize(other, (ref.shape[1], ref.shape[0]))
 
 
+def rotate_image(img: np.ndarray, angle_deg: float) -> np.ndarray:
+    """中心回りに同サイズで回転。"""
+    if not angle_deg:
+        return img
+    h, w = img.shape[:2]
+    center = (w / 2.0, h / 2.0)
+    mat = cv.getRotationMatrix2D(center, float(angle_deg), 1.0)
+    rotated = cv.warpAffine(
+        img,
+        mat,
+        (w, h),
+        flags=cv.INTER_LINEAR,
+        borderMode=cv.BORDER_CONSTANT,
+        borderValue=(0, 0, 0),
+    )
+    # warpAffineは2ch/3chを保持する。h×w×3 に整形
+    if rotated.ndim == 2:
+        rotated = cv.cvtColor(rotated, cv.COLOR_GRAY2BGR)
+    return rotated
+
+
 def colorize_mip(mip_img: np.ndarray, colormap: int = MIP_COLORMAP) -> np.ndarray:
     # 1ch化
     if mip_img.ndim == 3:
@@ -64,7 +85,11 @@ def blend_with_mask(
 
 
 def blend_three(
-    bg_path: str, mid_path: str, fg_path: str, params: BlendParams
+    bg_path: str,
+    mid_path: str,
+    fg_path: str,
+    params: BlendParams,
+    rotation_deg: float = 0.0,
 ) -> np.ndarray:
     # 読み込み
     bg = read_color(bg_path)
@@ -78,6 +103,11 @@ def blend_three(
     # サイズ合わせ
     mid = ensure_size(bg_skin, mid)
     fg = ensure_size(bg_skin, fg)
+
+    # 3画像とも回転（同中心・同サイズ）
+    bg_skin = rotate_image(bg_skin, rotation_deg)
+    mid = rotate_image(mid, rotation_deg)
+    fg = rotate_image(fg, rotation_deg)
 
     # MIPカラー化
     mid_color = colorize_mip(mid, MIP_COLORMAP)

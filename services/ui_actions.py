@@ -24,13 +24,14 @@ def blend_and_get_image(
     fg_path: str,
     alpha_mid: float,
     alpha_fg: float,
+    rotation_deg: float = 0.0,
 ) -> Image.Image:
     if not (
         os.path.isfile(bg_path) and os.path.isfile(mid_path) and os.path.isfile(fg_path)
     ):
         raise ValueError("3枚の画像パスを正しく指定してください。")
     params = BlendParams(alpha_mid=float(alpha_mid), alpha_fg=float(alpha_fg))
-    out_bgr = blend_three(bg_path, mid_path, fg_path, params)
+    out_bgr = blend_three(bg_path, mid_path, fg_path, params, rotation_deg=rotation_deg)
     out_rgb = out_bgr[:, :, ::-1]
     return Image.fromarray(out_rgb)
 

@@ -90,6 +90,8 @@ __vm/
 __pycache__/
 *.py[cod]
 *$py.class
+# Ensure Python bytecode is ignored explicitly
+*.pyc
  
 # C extensions
 *.so
