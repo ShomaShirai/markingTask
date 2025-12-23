@@ -10,8 +10,8 @@ from services.ui_actions import (
     resize_for_canvas,
     save_with_canvas,
     append_metrics_for_image,
-    MetricsTracker,
 )
+from services.metrix_service import MetricsService
 from domain.type import MIP_LINE_COLOR, VEIN_LINE_COLOR, LINE_WIDTH, Stroke
 from services.user_service import set_current_user
 
@@ -48,7 +48,7 @@ class MainWindow(tk.Tk):
         self.rotation_step = 10.0  # 次へで回す角度ステップ（度）
 
         # 計測トラッカー（servicesへ委譲）
-        self.metrics = MetricsTracker()
+        self.metrics = MetricsService()
 
         # 描画状態
         self.current_draw_color = None
