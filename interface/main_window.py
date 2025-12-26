@@ -20,7 +20,7 @@ class MainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("3画像重畳マーキングタスク用ツール")
-        self.geometry("1350x840")
+        self.geometry("1350x820")
 
         # ファイルパスの初期値（assetsがあれば推測）
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -46,6 +46,7 @@ class MainWindow(tk.Tk):
         self.display_image = None  # 表示用にリサイズしたPIL画像
         self.rotation_angle = 0.0  # 現在の回転角度（度）
         self.rotation_step = 10.0  # 次へで回す角度ステップ（度）
+        self.flip_code: int | None = None  # 反転指定（None, 0 上下, 1 左右, -1 両方）
 
         # 計測トラッカー（servicesへ委譲）
         self.metrics = MetricsService()
@@ -184,12 +185,15 @@ class MainWindow(tk.Tk):
                 float(self.alpha_mid.get()),
                 float(self.alpha_fg.get()),
                 rotation_deg=self.rotation_angle,
+                flip_code=self.flip_code,
             )
             self._show_image(self.result_image)
         except Exception as e:
             messagebox.showerror("処理失敗", str(e))
 
     def _on_next(self):
+        # 反転（なし/上下/左右/両方）をランダムに選択
+        self.flip_code = random.choice([None, 0, 1, -1])
         # 回転角度をランダムに（10度刻み）選択して再ブレンド
         candidates = list(range(0, 360, 10))
         self.rotation_angle = float(random.choice(candidates))

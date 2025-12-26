@@ -89,6 +89,7 @@ def blend_three(
     fg_path: str,
     params: BlendParams,
     rotation_deg: float = 0.0,
+    flip_code: int | None = None,
 ) -> np.ndarray:
     # 読み込み
     bg = read_color(bg_path)
@@ -103,7 +104,14 @@ def blend_three(
     mid = ensure_size(bg_skin, mid)
     fg = ensure_size(bg_skin, fg)
 
-    # 3画像とも回転（同中心・同サイズ）
+    # 3画像とも反転（必要なら）
+    if flip_code is not None:
+        if flip_code in (0, 1, -1):
+            bg_skin = cv.flip(bg_skin, flip_code)
+            mid = cv.flip(mid, flip_code)
+            fg = cv.flip(fg, flip_code)
+
+    # 3画像とも回転（同中心）
     bg_skin = rotate_image(bg_skin, rotation_deg)
     mid = rotate_image(mid, rotation_deg)
     fg = rotate_image(fg, rotation_deg)
