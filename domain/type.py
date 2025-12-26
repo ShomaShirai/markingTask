@@ -79,7 +79,3 @@ class AssetsConfig:
             "fg": ["vein_white.png", "vein.png", "vein_mask.png"],
         }
     )
-
-
-# 既定のAssets設定
-DEFAULT_ASSETS_CONFIG = AssetsConfig()

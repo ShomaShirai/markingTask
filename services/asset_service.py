@@ -2,7 +2,10 @@ import os
 import random
 from typing import Tuple
 
-from domain.type import AssetsConfig, DEFAULT_ASSETS_CONFIG
+from domain.type import AssetsConfig
+
+# Domain層は宣言のみ。既定値の実体はServices内で保持する。
+DEFAULT_CONFIG = AssetsConfig()
 
 
 def _resolve_role_path(dir_path: str, role: str, config: AssetsConfig) -> str | None:
@@ -14,11 +17,13 @@ def _resolve_role_path(dir_path: str, role: str, config: AssetsConfig) -> str | 
 
 
 def detect_group_paths(
-    dir_path: str, config: AssetsConfig = DEFAULT_ASSETS_CONFIG
+    dir_path: str, config: AssetsConfig | None = None
 ) -> Tuple[str, str, str] | None:
     """dir_path内で期待される3画像（bg, mid, fg）を検出して返す。
     すべて揃っていない場合はNone。
     """
+    if config is None:
+        config = DEFAULT_CONFIG
     bg = _resolve_role_path(dir_path, "bg", config)
     mid = _resolve_role_path(dir_path, "mid", config)
     fg = _resolve_role_path(dir_path, "fg", config)
@@ -27,15 +32,20 @@ def detect_group_paths(
     return None
 
 
-def get_default_assets_root(config: AssetsConfig = DEFAULT_ASSETS_CONFIG) -> str:
+def get_default_assets_root(config: AssetsConfig | None = None) -> str:
     """プロジェクト直下の既定assetsルートを返す。"""
+    if config is None:
+        config = DEFAULT_CONFIG
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(project_root, config.root_dir_name)
 
 
 def list_available_groups(
-    assets_root: str | None = None, config: AssetsConfig = DEFAULT_ASSETS_CONFIG
+    assets_root: str | None = None,
+    config: AssetsConfig | None = None,
 ) -> list[Tuple[str, str, str]]:
+    if config is None:
+        config = DEFAULT_CONFIG
     if assets_root is None:
         assets_root = get_default_assets_root(config)
     groups: list[Tuple[str, str, str]] = []
@@ -57,7 +67,7 @@ def list_available_groups(
 
 
 def pick_random_group(
-    assets_root: str | None = None, config: AssetsConfig = DEFAULT_ASSETS_CONFIG
+    assets_root: str | None = None, config: AssetsConfig | None = None
 ) -> Tuple[str, str, str]:
     groups = list_available_groups(assets_root, config)
     if not groups:
