@@ -96,7 +96,6 @@ def append_metrics_for_image(image_path: str, rows: list[dict]) -> str:
         "start_latency_ms",
         "stroke_duration_ms",
         "rotation_deg",
-        "saved_at",
     ]
     write_header = not os.path.exists(csv_path)
 
@@ -104,7 +103,6 @@ def append_metrics_for_image(image_path: str, rows: list[dict]) -> str:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         if write_header:
             writer.writeheader()
-        saved_at = datetime.now().isoformat(timespec="seconds")
         for r in rows:
             writer.writerow(
                 {
@@ -113,7 +111,6 @@ def append_metrics_for_image(image_path: str, rows: list[dict]) -> str:
                     "start_latency_ms": r.get("start_latency_ms"),
                     "stroke_duration_ms": r.get("stroke_duration_ms"),
                     "rotation_deg": r.get("rotation_deg"),
-                    "saved_at": saved_at,
                 }
             )
     return csv_path
