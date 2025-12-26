@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import cv2 as cv
 
 
@@ -64,3 +64,22 @@ class SaveRule:
     dir_format: str = "{username}_{date}"
     # ファイル名の書式: {time} (HHMMSSfff), 拡張子はServices側で決定
     file_format: str = "image_{time}.png"
+
+
+# Assets構成（Domainで規定し、Servicesで参照・実体パス解決）
+@dataclass
+class AssetsConfig:
+    # ルートディレクトリ名（プロジェクト直下）
+    root_dir_name: str = "assets"
+    # 役割ごとの期待ファイル名候補
+    expected_names: dict[str, list[str]] = field(
+        default_factory=lambda: {
+            "bg": ["woman.png", "bg.png"],
+            "mid": ["compositionMip.png", "mip.png"],
+            "fg": ["vein_white.png", "vein.png", "vein_mask.png"],
+        }
+    )
+
+
+# 既定のAssets設定
+DEFAULT_ASSETS_CONFIG = AssetsConfig()

@@ -11,6 +11,7 @@ from services.ui_actions import (
     save_with_canvas,
     append_metrics_for_image,
 )
+from services.asset_service import pick_random_group
 from services.metrix_service import MetricsService
 from domain.type import MIP_LINE_COLOR, VEIN_LINE_COLOR, LINE_WIDTH, Stroke
 from services.user_service import set_current_user
@@ -25,20 +26,26 @@ class MainWindow(tk.Tk):
         # ファイルパスの初期値（assetsがあれば推測）
         base_dir = os.path.dirname(os.path.abspath(__file__))
         proj_root = os.path.dirname(base_dir)
-        assets_dir = os.path.join(proj_root, "assets")
-        self.bg_path = (
-            os.path.join(assets_dir, "woman.png") if os.path.isdir(assets_dir) else ""
-        )
-        self.mid_path = (
-            os.path.join(assets_dir, "compositionMip.png")
-            if os.path.isdir(assets_dir)
-            else ""
-        )
-        self.fg_path = (
-            os.path.join(assets_dir, "vein_white.png")
-            if os.path.isdir(assets_dir)
-            else ""
-        )
+        try:
+            self.bg_path, self.mid_path, self.fg_path = pick_random_group()
+        except Exception:
+            # フォールバック（従来のトップレベルファイル）
+            assets_dir = os.path.join(proj_root, "assets")
+            self.bg_path = (
+                os.path.join(assets_dir, "woman.png")
+                if os.path.isdir(assets_dir)
+                else ""
+            )
+            self.mid_path = (
+                os.path.join(assets_dir, "compositionMip.png")
+                if os.path.isdir(assets_dir)
+                else ""
+            )
+            self.fg_path = (
+                os.path.join(assets_dir, "vein_white.png")
+                if os.path.isdir(assets_dir)
+                else ""
+            )
 
         self.result_image = None  # PIL Image
         self.photo = None  # ImageTk.PhotoImage（参照保持用）
@@ -192,6 +199,14 @@ class MainWindow(tk.Tk):
             messagebox.showerror("処理失敗", str(e))
 
     def _on_next(self):
+        # 画像グループをランダムに選択
+        try:
+            self.bg_path, self.mid_path, self.fg_path = pick_random_group()
+            self.bg_var.set(self.bg_path)
+            self.mid_var.set(self.mid_path)
+            self.fg_var.set(self.fg_path)
+        except Exception:
+            pass
         # 反転（なし/上下/左右/両方）をランダムに選択
         self.flip_code = random.choice([None, 0, 1, -1])
         # 回転角度をランダムに（10度刻み）選択して再ブレンド
