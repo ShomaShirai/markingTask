@@ -25,27 +25,11 @@ class ProcessingConfig:
 
 
 @dataclass
-class OverlayColors:
-    hue_for_bg: int = 15
-    sat_for_bg: int = 140
-    vein_h: int = 30
-    vein_s: int = 255
-    mip_colormap: int = cv.COLORMAP_OCEAN
-
-
-@dataclass
 class DrawingConfig:
     """UI描画設定（Tkinter Canvas用カラー等）"""
 
     mip_line_color: str = "#00C8FF"  # MIP用ライン色（シアン系）
     vein_line_color: str = "#FF5050"  # 血管抽出用ライン色（赤系）
-    line_width: int = 3
-
-
-@dataclass
-class CanvasSettings:
-    mip_line_color: str = "#00C8FF"
-    vein_line_color: str = "#FF5050"
     line_width: int = 3
 
 
