@@ -29,20 +29,19 @@ def rotate_image(img: np.ndarray, angle_deg: float) -> np.ndarray:
     """中心回りに同サイズで回転。"""
     if not angle_deg:
         return img
+
+    # 画像サイズを拡張することで全体の画像を表示できるように修正
     h, w = img.shape[:2]
     center = (w / 2.0, h / 2.0)
-    mat = cv.getRotationMatrix2D(center, float(angle_deg), 1.0)
+    mat = cv.getRotationMatrix2D(center, angle_deg, 1.0)
+    c, s = abs(mat[0, 0]), abs(mat[0, 1])
+    new_w = int(h * s + w * c)
+    new_h = int(h * c + w * s)
+    mat[0, 2] += (new_w / 2.0) - center[0]
+    mat[1, 2] += (new_h / 2.0) - center[1]
     rotated = cv.warpAffine(
-        img,
-        mat,
-        (w, h),
-        flags=cv.INTER_LINEAR,
-        borderMode=cv.BORDER_CONSTANT,
-        borderValue=(0, 0, 0),
+        img, mat, (new_w, new_h), flags=cv.INTER_LINEAR, borderMode=cv.BORDER_CONSTANT
     )
-    # warpAffineは2ch/3chを保持する。h×w×3 に整形
-    if rotated.ndim == 2:
-        rotated = cv.cvtColor(rotated, cv.COLOR_GRAY2BGR)
     return rotated
 
 

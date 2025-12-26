@@ -20,7 +20,7 @@ class MainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("3画像重畳マーキングタスク用ツール")
-        self.geometry("1350x740")
+        self.geometry("1350x840")
 
         # ファイルパスの初期値（assetsがあれば推測）
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -66,7 +66,7 @@ class MainWindow(tk.Tk):
         # 左ペイン: キャンバス
         left = tk.Frame(root)
         left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.canvas = tk.Canvas(left, bg="#222222", width=960, height=700)
+        self.canvas = tk.Canvas(left, bg="#222222", width=960, height=800)
         self.canvas.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
 
         # 右ペイン: コントロール群（固定幅）
