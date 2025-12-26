@@ -7,8 +7,11 @@ from PIL import Image
 
 from process.blend import blend_three
 from process.draw import compose_strokes_on_image
-from domain.type import BlendParams, SaveRule, Stroke
+from domain.type import BlendParams, SaveRule, Stroke, ProcessingConfig
 from services.user_service import get_current_user
+
+
+DEFAULT_PROCESSING_CONFIG = ProcessingConfig()
 
 
 def browse_path(var: tk.StringVar) -> None:
@@ -40,6 +43,7 @@ def blend_and_get_image(
         params,
         rotation_deg=rotation_deg,
         flip_code=flip_code,
+        processing=DEFAULT_PROCESSING_CONFIG,
     )
     out_rgb = out_bgr[:, :, ::-1]
     return Image.fromarray(out_rgb)

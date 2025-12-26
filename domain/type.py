@@ -13,18 +13,40 @@ class User:
     name: str
 
 
-# 既定の色設定（肌色バック + クール系MIP + 肌色系血管ティント）
-HUE_FOR_BG: int = 15
-SAT_FOR_BG: int = 140
-VEIN_H: int = 30
-VEIN_S: int = 255
-MIP_COLORMAP: int = cv.COLORMAP_OCEAN
+@dataclass
+class ProcessingConfig:
+    """画像処理用の定数セット（肌色変換・血管ティント・MIPカラーマップ）"""
 
-# 描画設定（Tkinter Canvas用カラー）
-# 16進カラー文字列で指定（例: "#RRGGBB"）
-MIP_LINE_COLOR: str = "#00C8FF"  # MIP用ライン色（シアン系）
-VEIN_LINE_COLOR: str = "#FF5050"  # 血管抽出用ライン色（赤系）
-LINE_WIDTH: int = 3
+    hue_for_bg: int = 15
+    sat_for_bg: int = 140
+    vein_h: int = 30
+    vein_s: int = 255
+    mip_colormap: int = cv.COLORMAP_OCEAN
+
+
+@dataclass
+class OverlayColors:
+    hue_for_bg: int = 15
+    sat_for_bg: int = 140
+    vein_h: int = 30
+    vein_s: int = 255
+    mip_colormap: int = cv.COLORMAP_OCEAN
+
+
+@dataclass
+class DrawingConfig:
+    """UI描画設定（Tkinter Canvas用カラー等）"""
+
+    mip_line_color: str = "#00C8FF"  # MIP用ライン色（シアン系）
+    vein_line_color: str = "#FF5050"  # 血管抽出用ライン色（赤系）
+    line_width: int = 3
+
+
+@dataclass
+class CanvasSettings:
+    mip_line_color: str = "#00C8FF"
+    vein_line_color: str = "#FF5050"
+    line_width: int = 3
 
 
 # キャンバス描画（UIからServicesへ渡すデータ構造）

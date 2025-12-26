@@ -4,11 +4,7 @@ import numpy as np
 from process.HSV_trans import HSVTransformer
 from domain.type import (
     BlendParams,
-    HUE_FOR_BG,
-    SAT_FOR_BG,
-    VEIN_H,
-    VEIN_S,
-    MIP_COLORMAP,
+    ProcessingConfig,
 )
 
 
@@ -45,7 +41,7 @@ def rotate_image(img: np.ndarray, angle_deg: float) -> np.ndarray:
     return rotated
 
 
-def colorize_mip(mip_img: np.ndarray, colormap: int = MIP_COLORMAP) -> np.ndarray:
+def colorize_mip(mip_img: np.ndarray, colormap: int) -> np.ndarray:
     # 1ch化
     if mip_img.ndim == 3:
         mip_gray = cv.cvtColor(mip_img, cv.COLOR_BGR2GRAY)
@@ -90,6 +86,7 @@ def blend_three(
     params: BlendParams,
     rotation_deg: float = 0.0,
     flip_code: int | None = None,
+    processing: ProcessingConfig | None = None,
 ) -> np.ndarray:
     # 読み込み
     bg = read_color(bg_path)
@@ -97,7 +94,9 @@ def blend_three(
     fg = read_color(fg_path)
 
     # 背景IRを肌色化
-    hsv_tf = HSVTransformer(hue=HUE_FOR_BG, saturation=SAT_FOR_BG)
+    if processing is None:
+        processing = ProcessingConfig()
+    hsv_tf = HSVTransformer(hue=processing.hue_for_bg, saturation=processing.sat_for_bg)
     bg_skin = hsv_tf.convert_ir_to_skin_color(bg)
 
     # サイズ合わせ
@@ -117,7 +116,7 @@ def blend_three(
     fg = rotate_image(fg, rotation_deg)
 
     # MIPカラー化
-    mid_color = colorize_mip(mid, MIP_COLORMAP)
+    mid_color = colorize_mip(mid, processing.mip_colormap)
 
     # MIPの非ゼロ画素のみマスク
     mid_gray_for_mask = cv.cvtColor(mid, cv.COLOR_BGR2GRAY) if mid.ndim == 3 else mid
@@ -129,8 +128,8 @@ def blend_three(
     # 血管ティント（背景の明度Vを使用）
     bg_hsv = cv.cvtColor(bg_skin, cv.COLOR_BGR2HSV)
     vein_hsv = np.zeros_like(bg_hsv)
-    vein_hsv[:, :, 0] = np.uint8(np.clip(VEIN_H, 0, 179))
-    vein_hsv[:, :, 1] = np.uint8(np.clip(VEIN_S, 0, 255))
+    vein_hsv[:, :, 0] = np.uint8(np.clip(processing.vein_h, 0, 179))
+    vein_hsv[:, :, 1] = np.uint8(np.clip(processing.vein_s, 0, 255))
     vein_hsv[:, :, 2] = bg_hsv[:, :, 2]
     vein_tint = cv.cvtColor(vein_hsv, cv.COLOR_HSV2BGR)
 

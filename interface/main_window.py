@@ -13,7 +13,7 @@ from services.ui_actions import (
 )
 from services.asset_service import pick_random_group
 from services.metrix_service import MetricsService
-from domain.type import MIP_LINE_COLOR, VEIN_LINE_COLOR, LINE_WIDTH, Stroke
+from domain.type import Stroke, DrawingConfig
 from services.user_service import set_current_user
 
 
@@ -58,7 +58,8 @@ class MainWindow(tk.Tk):
         # 計測トラッカー（servicesへ委譲）
         self.metrics = MetricsService()
 
-        # 描画状態
+        # 描画設定と状態
+        self.drawing_config: DrawingConfig = DrawingConfig()
         self.current_draw_color = None
         self.last_xy = None
         self.drawn_items = []  # キャンバスに描いたラインIDの管理
@@ -265,25 +266,25 @@ class MainWindow(tk.Tk):
     # --- 描画モードとキャンバスイベントハンドラ ---
     def _set_mode_mip(self):
         # すでにMIPモードならトグルで停止
-        if self.current_draw_color == MIP_LINE_COLOR:
+        if self.current_draw_color == self.drawing_config.mip_line_color:
             self.current_draw_color = None
             self.last_xy = None
             self._update_mode_buttons(active=None)
             self.metrics.set_mode(None)
         else:
-            self.current_draw_color = MIP_LINE_COLOR
+            self.current_draw_color = self.drawing_config.mip_line_color
             self._update_mode_buttons(active="mip")
             self.metrics.set_mode("mip")
 
     def _set_mode_vein(self):
         # すでに血管モードならトグルで停止
-        if self.current_draw_color == VEIN_LINE_COLOR:
+        if self.current_draw_color == self.drawing_config.vein_line_color:
             self.current_draw_color = None
             self.last_xy = None
             self._update_mode_buttons(active=None)
             self.metrics.set_mode(None)
         else:
-            self.current_draw_color = VEIN_LINE_COLOR
+            self.current_draw_color = self.drawing_config.vein_line_color
             self._update_mode_buttons(active="vein")
             self.metrics.set_mode("vein")
 
@@ -305,7 +306,7 @@ class MainWindow(tk.Tk):
             x1,
             y1,
             fill=self.current_draw_color,
-            width=LINE_WIDTH,
+            width=self.drawing_config.line_width,
             capstyle=tk.ROUND,
             smooth=True,
         )
@@ -360,9 +361,13 @@ class MainWindow(tk.Tk):
             color = self.canvas.itemcget(item_id, "fill") or "#FF0000"
             width_str = self.canvas.itemcget(item_id, "width")
             try:
-                width = int(float(width_str)) if width_str else LINE_WIDTH
+                width = (
+                    int(float(width_str))
+                    if width_str
+                    else self.drawing_config.line_width
+                )
             except Exception:
-                width = LINE_WIDTH
+                width = self.drawing_config.line_width
             strokes.append(Stroke(points=pts, color=color, width=width))
         return strokes
 
