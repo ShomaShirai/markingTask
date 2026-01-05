@@ -118,12 +118,6 @@ class MainWindow(tk.Tk):
             row=2, column=2
         )
 
-        blendBtns = tk.Frame(right)
-        blendBtns.pack(fill=tk.X, pady=8)
-        tk.Button(blendBtns, text="重畳できるか確認", command=self._on_blend).pack(
-            side=tk.LEFT
-        )
-
         # パラメータ（右ペイン内）
         params_frame = tk.LabelFrame(right, text="ブレンドパラメータ")
         params_frame.pack(fill=tk.X)
