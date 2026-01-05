@@ -79,6 +79,64 @@ def blend_with_mask(
     return out.astype(np.uint8)
 
 
+# --- Helper functions ---
+def apply_transforms(
+    img: np.ndarray, flip_code: int | None, angle_deg: float
+) -> np.ndarray:
+    """Apply optional flip then rotation to an image."""
+    if flip_code is not None and flip_code in (0, 1, -1):
+        img = cv.flip(img, flip_code)
+    img = rotate_image(img, angle_deg)
+    return img
+
+
+def build_masks(
+    mid_img: np.ndarray, fg_img: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Build binary masks for MIP and vein from their grayscale representations."""
+    mid_gray = cv.cvtColor(mid_img, cv.COLOR_BGR2GRAY) if mid_img.ndim == 3 else mid_img
+    _, mask_mip = cv.threshold(mid_gray, 0, 255, cv.THRESH_BINARY)
+    fg_gray = cv.cvtColor(fg_img, cv.COLOR_BGR2GRAY)
+    _, mask_vein = cv.threshold(fg_gray, 0, 255, cv.THRESH_BINARY)
+    return mask_mip, mask_vein
+
+
+def make_base_bg(
+    bg_img: np.ndarray, processing: ProcessingConfig, mode_key: str | None
+) -> np.ndarray:
+    if mode_key == "task1":
+        return bg_img
+    hsv_tf = HSVTransformer(hue=processing.hue_for_bg, saturation=processing.sat_for_bg)
+    bg_skin = hsv_tf.convert_ir_to_skin_color(bg_img)
+    return bg_skin
+
+
+def make_mip_layer(
+    mid_img: np.ndarray, processing: ProcessingConfig, mode_key: str | None
+) -> np.ndarray:
+    """Front layer for MIP: default colorized; task1 uses image as-is (no processing)."""
+    if mode_key == "task1" or mode_key == "task2" or mode_key == "task3":
+        return mid_img
+    return colorize_mip(mid_img, processing.mip_colormap)
+
+
+def make_vein_layer(
+    bg_base: np.ndarray,
+    processing: ProcessingConfig,
+    mode_key: str | None,
+    fg_img: np.ndarray | None = None,
+) -> np.ndarray:
+    """Front layer for veins: default HSV tint; task1 uses vein image as-is (no processing)."""
+    if (mode_key == "task1" or mode_key == "task2") and fg_img is not None:
+        return fg_img
+    bg_hsv = cv.cvtColor(bg_base, cv.COLOR_BGR2HSV)
+    vein_hsv = np.zeros_like(bg_hsv)
+    vein_hsv[:, :, 0] = np.uint8(np.clip(processing.vein_h, 0, 179))
+    vein_hsv[:, :, 1] = np.uint8(np.clip(processing.vein_s, 0, 255))
+    vein_hsv[:, :, 2] = bg_hsv[:, :, 2]
+    return cv.cvtColor(vein_hsv, cv.COLOR_HSV2BGR)
+
+
 def blend_three(
     bg_path: str,
     mid_path: str,
@@ -94,49 +152,28 @@ def blend_three(
     mid = read_color(mid_path)
     fg = read_color(fg_path)
 
-    # 背景IRを肌色化
+    # 設定
     if processing is None:
         processing = ProcessingConfig()
-    hsv_tf = HSVTransformer(hue=processing.hue_for_bg, saturation=processing.sat_for_bg)
-    bg_skin = hsv_tf.convert_ir_to_skin_color(bg)
 
-    # サイズ合わせ
-    mid = ensure_size(bg_skin, mid)
-    fg = ensure_size(bg_skin, fg)
+    # サイズ合わせ（まだ変換前）
+    mid = ensure_size(bg, mid)
+    fg = ensure_size(bg, fg)
 
-    # 3画像とも反転（必要なら）
-    if flip_code is not None:
-        if flip_code in (0, 1, -1):
-            bg_skin = cv.flip(bg_skin, flip_code)
-            mid = cv.flip(mid, flip_code)
-            fg = cv.flip(fg, flip_code)
+    # 3画像へ変換適用（flip→rotate）
+    bg_pre = apply_transforms(bg, flip_code, rotation_deg)
+    mid = apply_transforms(mid, flip_code, rotation_deg)
+    fg = apply_transforms(fg, flip_code, rotation_deg)
 
-    # 3画像とも回転（同中心）
-    bg_skin = rotate_image(bg_skin, rotation_deg)
-    mid = rotate_image(mid, rotation_deg)
-    fg = rotate_image(fg, rotation_deg)
+    # マスク生成
+    mask_mip, mask_vein = build_masks(mid, fg)
 
-    # MIPカラー化
-    mid_color = colorize_mip(mid, processing.mip_colormap)
+    # レイヤー生成
+    base_bg = make_base_bg(bg_pre, mode_key)
+    mip_layer = make_mip_layer(mid, processing, mode_key)
+    vein_layer = make_vein_layer(base_bg, processing, mode_key, fg_img=fg)
 
-    # MIPの非ゼロ画素のみマスク
-    mid_gray_for_mask = cv.cvtColor(mid, cv.COLOR_BGR2GRAY) if mid.ndim == 3 else mid
-    _, mask_mip = cv.threshold(mid_gray_for_mask, 0, 255, cv.THRESH_BINARY)
-
-    # 背景 + MIP（マスク付き）
-    blend1 = blend_with_mask(bg_skin, mid_color, params.alpha_mid, mask_mip)
-
-    # 血管ティント（背景の明度Vを使用）
-    bg_hsv = cv.cvtColor(bg_skin, cv.COLOR_BGR2HSV)
-    vein_hsv = np.zeros_like(bg_hsv)
-    vein_hsv[:, :, 0] = np.uint8(np.clip(processing.vein_h, 0, 179))
-    vein_hsv[:, :, 1] = np.uint8(np.clip(processing.vein_s, 0, 255))
-    vein_hsv[:, :, 2] = bg_hsv[:, :, 2]
-    vein_tint = cv.cvtColor(vein_hsv, cv.COLOR_HSV2BGR)
-
-    # 血管白領域のみブレンド
-    fg_gray = cv.cvtColor(fg, cv.COLOR_BGR2GRAY)
-    _, mask_bin = cv.threshold(fg_gray, 0, 255, cv.THRESH_BINARY)
-    out = blend_with_mask(blend1, vein_tint, params.alpha_fg, mask_bin)
-
+    # ブレンド（順序固定）
+    blend1 = blend_with_mask(base_bg, mip_layer, params.alpha_mid, mask_mip)
+    out = blend_with_mask(blend1, vein_layer, params.alpha_fg, mask_vein)
     return out
