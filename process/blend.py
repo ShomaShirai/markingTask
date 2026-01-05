@@ -121,7 +121,9 @@ def make_mip_layer(
     if mode_key == "task1" or mode_key == "task2" or mode_key == "task3":
         return mid_img
     colormap = (
-        mip_colormap_override if mip_colormap_override is not None else processing.mip_colormap
+        mip_colormap_override
+        if mip_colormap_override is not None
+        else processing.mip_colormap
     )
     return colorize_mip(mid_img, colormap)
 
@@ -176,7 +178,7 @@ def blend_three(
     mask_mip, mask_vein = build_masks(mid, fg)
 
     # レイヤー生成
-    base_bg = make_base_bg(bg_pre, mode_key)
+    base_bg = make_base_bg(bg_pre, processing, mode_key)
     mip_layer = make_mip_layer(
         mid, processing, mode_key, mip_colormap_override=mip_colormap_override
     )

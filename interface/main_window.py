@@ -214,7 +214,9 @@ class MainWindow(tk.Tk):
                     if s.key == self.current_mode_key:
                         spec = s
                         break
-            mip_override = getattr(spec, "mip_colormap_override", None) if spec else None
+            mip_override = (
+                getattr(spec, "mip_colormap_override", None) if spec else None
+            )
 
             self.result_image = blend_and_get_image(
                 bg,
@@ -363,6 +365,8 @@ class MainWindow(tk.Tk):
     def _select_mode(self, key: str):
         self.current_mode_key = key
         self._update_task_buttons()
+        # モード変更＋ on_next と同等のランダム切替・計測開始・クリア・再ブレンドを実施
+        self._on_next()
 
     def _update_task_buttons(self):
         # reset all
