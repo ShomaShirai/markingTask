@@ -15,7 +15,10 @@ class User:
 
 @dataclass
 class ProcessingConfig:
-    """画像処理用の定数セット（肌色変換・血管ティント・MIPカラーマップ）"""
+    """
+    画像処理用の定数セット（肌色変換・血管ティント・MIPカラーマップ）
+    カラーマップの部分は,OCEAN or HOTを使用する
+    """
 
     hue_for_bg: int = 15
     sat_for_bg: int = 140

@@ -110,7 +110,7 @@ class MainWindow(tk.Tk):
 
         blendBtns = tk.Frame(right)
         blendBtns.pack(fill=tk.X, pady=8)
-        tk.Button(blendBtns, text="重畳して表示", command=self._on_blend).pack(
+        tk.Button(blendBtns, text="重畳できるか確認", command=self._on_blend).pack(
             side=tk.LEFT
         )
 
@@ -153,6 +153,23 @@ class MainWindow(tk.Tk):
         self.btn_vein.pack(side=tk.LEFT, padx=4)
         self.btn_clear = tk.Button(draw_frame, text="クリア", command=self._on_clear)
         self.btn_clear.pack(side=tk.LEFT, padx=8)
+
+        # 課題モード選択（練習 + 1..5）
+        task_frame = tk.LabelFrame(right, text="課題モード選択")
+        task_frame.pack(fill=tk.X, pady=(8, 0))
+        self.session_mode = None  # 'practice' or 'task'
+        self.task_index = None  # 1..5 for task
+        self.btn_practice = tk.Button(
+            task_frame, text="練習", command=self._set_practice
+        )
+        self.btn_practice.pack(side=tk.LEFT, padx=4)
+        self.btn_task_btns: list[tk.Button] = []
+        for i in range(1, 6):
+            b = tk.Button(
+                task_frame, text=str(i), command=lambda n=i: self._select_task(n)
+            )
+            b.pack(side=tk.LEFT, padx=2)
+            self.btn_task_btns.append(b)
 
         # ボタン（右ペイン内）
         saveNextBtns = tk.Frame(right)
@@ -326,6 +343,29 @@ class MainWindow(tk.Tk):
             except Exception:
                 pass
         self.drawn_items.clear()
+
+    # --- 課題選択 ---
+    def _set_practice(self):
+        self.session_mode = "practice"
+        self.task_index = None
+        self._update_task_buttons()
+
+    def _select_task(self, n: int):
+        self.session_mode = "task"
+        self.task_index = n
+        self._update_task_buttons()
+
+    def _update_task_buttons(self):
+        # reset all
+        self.btn_practice.configure(bg=self._default_btn_bg, fg=self._default_btn_fg)
+        for b in self.btn_task_btns:
+            b.configure(bg=self._default_btn_bg, fg=self._default_btn_fg)
+        # highlight current
+        if self.session_mode == "practice":
+            self.btn_practice.configure(bg="#FF4D4D", fg="#FFFFFF")
+        elif self.session_mode == "task" and self.task_index is not None:
+            idx = max(1, min(5, self.task_index)) - 1
+            self.btn_task_btns[idx].configure(bg="#FF4D4D", fg="#FFFFFF")
 
     def _update_mode_buttons(self, active: str | None):
         # すべてリセット
