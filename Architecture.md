@@ -17,7 +17,7 @@ flowchart TB
 	subgraph Process[process 層]
 		BLEND[process/blend.py\n- 3画像重畳\n- 反転/回転/カラーマップ適用]
 		DRAW[process/draw.py\n- 手描きストローク合成]
-		HSV[process/HSV_trans.py\n- IR→肌色変換]
+		HSV[process/HSV_trans.py IR→肌色変換]
 	end
 
 	subgraph Domain[domain 層]
