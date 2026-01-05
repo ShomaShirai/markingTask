@@ -207,6 +207,15 @@ class MainWindow(tk.Tk):
         mid = self.mid_var.get().strip()
         fg = self.fg_var.get().strip()
         try:
+            # モードに応じたMIPカラーマップ上書き
+            spec = None
+            if self.current_mode_key and hasattr(self, "modes_config"):
+                for s in self.modes_config.modes:
+                    if s.key == self.current_mode_key:
+                        spec = s
+                        break
+            mip_override = getattr(spec, "mip_colormap_override", None) if spec else None
+
             self.result_image = blend_and_get_image(
                 bg,
                 mid,
@@ -216,6 +225,7 @@ class MainWindow(tk.Tk):
                 rotation_deg=self.rotation_angle,
                 flip_code=self.flip_code,
                 mode_key=self.current_mode_key,
+                mip_colormap_override=mip_override,
             )
             self._show_image(self.result_image)
         except Exception as e:

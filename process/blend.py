@@ -112,12 +112,18 @@ def make_base_bg(
 
 
 def make_mip_layer(
-    mid_img: np.ndarray, processing: ProcessingConfig, mode_key: str | None
+    mid_img: np.ndarray,
+    processing: ProcessingConfig,
+    mode_key: str | None,
+    mip_colormap_override: int | None = None,
 ) -> np.ndarray:
     """Front layer for MIP: default colorized; task1 uses image as-is (no processing)."""
     if mode_key == "task1" or mode_key == "task2" or mode_key == "task3":
         return mid_img
-    return colorize_mip(mid_img, processing.mip_colormap)
+    colormap = (
+        mip_colormap_override if mip_colormap_override is not None else processing.mip_colormap
+    )
+    return colorize_mip(mid_img, colormap)
 
 
 def make_vein_layer(
@@ -146,6 +152,7 @@ def blend_three(
     flip_code: int | None = None,
     processing: ProcessingConfig | None = None,
     mode_key: str | None = None,
+    mip_colormap_override: int | None = None,
 ) -> np.ndarray:
     # 読み込み
     bg = read_color(bg_path)
@@ -170,7 +177,9 @@ def blend_three(
 
     # レイヤー生成
     base_bg = make_base_bg(bg_pre, mode_key)
-    mip_layer = make_mip_layer(mid, processing, mode_key)
+    mip_layer = make_mip_layer(
+        mid, processing, mode_key, mip_colormap_override=mip_colormap_override
+    )
     vein_layer = make_vein_layer(base_bg, processing, mode_key, fg_img=fg)
 
     # ブレンド（順序固定）

@@ -31,6 +31,7 @@ def blend_and_get_image(
     rotation_deg: float = 0.0,
     flip_code: int | None = None,
     mode_key: str | None = None,
+    mip_colormap_override: int | None = None,
 ) -> Image.Image:
     if not (
         os.path.isfile(bg_path) and os.path.isfile(mid_path) and os.path.isfile(fg_path)
@@ -46,6 +47,7 @@ def blend_and_get_image(
         flip_code=flip_code,
         processing=DEFAULT_PROCESSING_CONFIG,
         mode_key=mode_key,
+        mip_colormap_override=mip_colormap_override,
     )
     out_rgb = out_bgr[:, :, ::-1]
     return Image.fromarray(out_rgb)

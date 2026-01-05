@@ -42,6 +42,8 @@ class ModeSpec:
     key: str  # 例: 'practice', 'task1', 'task2' ...
     label: str  # UI表示用ラベル（例: '練習', '1' など）
     max_trials: int | None  # Noneは無制限、数値はその回数で終了
+    # 画像処理のモード別上書き設定（例: task5で MIP のカラーマップを HOT にする）
+    mip_colormap_override: int | None = None
 
 
 @dataclass
