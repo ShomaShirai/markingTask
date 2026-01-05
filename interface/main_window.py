@@ -14,6 +14,7 @@ from services.ui_actions import (
 from services.asset_service import pick_random_group
 from services.metrix_service import MetricsService
 from domain.type import Stroke, DrawingConfig
+from services.config_service import DEFAULT_DRAWING_CONFIG, DEFAULT_MODES_CONFIG
 from services.user_service import set_current_user
 
 
@@ -59,10 +60,14 @@ class MainWindow(tk.Tk):
         self.metrics = MetricsService()
 
         # 描画設定と状態
-        self.drawing_config: DrawingConfig = DrawingConfig()
+        self.drawing_config: DrawingConfig = DEFAULT_DRAWING_CONFIG
         self.current_draw_color = None
         self.last_xy = None
         self.drawn_items = []  # キャンバスに描いたラインIDの管理
+        # 課題モード設定
+        self.modes_config = DEFAULT_MODES_CONFIG
+        self.current_mode_key: str | None = None
+        self.mode_buttons: dict[str, tk.Button] = {}
 
         self._build_ui()
         self._prompt_username()
@@ -154,22 +159,17 @@ class MainWindow(tk.Tk):
         self.btn_clear = tk.Button(draw_frame, text="クリア", command=self._on_clear)
         self.btn_clear.pack(side=tk.LEFT, padx=8)
 
-        # 課題モード選択（練習 + 1..5）
+        # 課題モード選択（config駆動）
         task_frame = tk.LabelFrame(right, text="課題モード選択")
         task_frame.pack(fill=tk.X, pady=(8, 0))
-        self.session_mode = None  # 'practice' or 'task'
-        self.task_index = None  # 1..5 for task
-        self.btn_practice = tk.Button(
-            task_frame, text="練習", command=self._set_practice
-        )
-        self.btn_practice.pack(side=tk.LEFT, padx=4)
-        self.btn_task_btns: list[tk.Button] = []
-        for i in range(1, 6):
-            b = tk.Button(
-                task_frame, text=str(i), command=lambda n=i: self._select_task(n)
+        for spec in self.modes_config.modes:
+            btn = tk.Button(
+                task_frame,
+                text=spec.label,
+                command=lambda k=spec.key: self._select_mode(k),
             )
-            b.pack(side=tk.LEFT, padx=2)
-            self.btn_task_btns.append(b)
+            btn.pack(side=tk.LEFT, padx=4)
+            self.mode_buttons[spec.key] = btn
 
         # ボタン（右ペイン内）
         saveNextBtns = tk.Frame(right)
@@ -192,6 +192,10 @@ class MainWindow(tk.Tk):
         # ボタンのデフォルト色を保持
         self._default_btn_bg = self.btn_mip.cget("bg")
         self._default_btn_fg = self.btn_mip.cget("fg")
+
+        # 初期モード選択（先頭を既定とする）
+        if self.modes_config.modes:
+            self._select_mode(self.modes_config.modes[0].key)
 
         # キャンバスの描画イベントをバインド
         self.canvas.bind("<ButtonPress-1>", self._on_canvas_down)
@@ -345,27 +349,19 @@ class MainWindow(tk.Tk):
         self.drawn_items.clear()
 
     # --- 課題選択 ---
-    def _set_practice(self):
-        self.session_mode = "practice"
-        self.task_index = None
-        self._update_task_buttons()
-
-    def _select_task(self, n: int):
-        self.session_mode = "task"
-        self.task_index = n
+    def _select_mode(self, key: str):
+        self.current_mode_key = key
         self._update_task_buttons()
 
     def _update_task_buttons(self):
         # reset all
-        self.btn_practice.configure(bg=self._default_btn_bg, fg=self._default_btn_fg)
-        for b in self.btn_task_btns:
-            b.configure(bg=self._default_btn_bg, fg=self._default_btn_fg)
+        for btn in self.mode_buttons.values():
+            btn.configure(bg=self._default_btn_bg, fg=self._default_btn_fg)
         # highlight current
-        if self.session_mode == "practice":
-            self.btn_practice.configure(bg="#FF4D4D", fg="#FFFFFF")
-        elif self.session_mode == "task" and self.task_index is not None:
-            idx = max(1, min(5, self.task_index)) - 1
-            self.btn_task_btns[idx].configure(bg="#FF4D4D", fg="#FFFFFF")
+        if self.current_mode_key and self.current_mode_key in self.mode_buttons:
+            self.mode_buttons[self.current_mode_key].configure(
+                bg="#FF4D4D", fg="#FFFFFF"
+            )
 
     def _update_mode_buttons(self, active: str | None):
         # すべてリセット

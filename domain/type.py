@@ -36,6 +36,19 @@ class DrawingConfig:
     line_width: int = 3
 
 
+# 課題モード定義（Domainは型のみ提供。既定値はServicesで保持）
+@dataclass
+class ModeSpec:
+    key: str  # 例: 'practice', 'task1', 'task2' ...
+    label: str  # UI表示用ラベル（例: '練習', '1' など）
+    max_trials: int | None  # Noneは無制限、数値はその回数で終了
+
+
+@dataclass
+class ModesConfig:
+    modes: list[ModeSpec]
+
+
 # キャンバス描画（UIからServicesへ渡すデータ構造）
 @dataclass
 class Stroke:
