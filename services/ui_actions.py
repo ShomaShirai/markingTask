@@ -92,6 +92,9 @@ def save_with_canvas(
             out_dir = os.path.join(out_dir, str(idx))
         except Exception:
             pass
+    # 練習モードは "practice" サブディレクトリ配下に保存
+    elif mode_key == "practice":
+        out_dir = os.path.join(out_dir, "practice")
     os.makedirs(out_dir, exist_ok=True)
 
     filename = rule.file_format.format(time=time_str)
