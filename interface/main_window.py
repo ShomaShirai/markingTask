@@ -215,6 +215,7 @@ class MainWindow(tk.Tk):
                 float(self.alpha_fg.get()),
                 rotation_deg=self.rotation_angle,
                 flip_code=self.flip_code,
+                mode_key=self.current_mode_key,
             )
             self._show_image(self.result_image)
         except Exception as e:
@@ -263,7 +264,7 @@ class MainWindow(tk.Tk):
         base_img = (
             self.display_image if self.display_image is not None else self.result_image
         )
-        path = save_with_canvas(base_img, strokes)
+        path = save_with_canvas(base_img, strokes, mode_key=self.current_mode_key)
         if path:
             # 計測CSVへ追記（モードごとに1行）
             try:

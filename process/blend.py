@@ -87,6 +87,7 @@ def blend_three(
     rotation_deg: float = 0.0,
     flip_code: int | None = None,
     processing: ProcessingConfig | None = None,
+    mode_key: str | None = None,
 ) -> np.ndarray:
     # 読み込み
     bg = read_color(bg_path)

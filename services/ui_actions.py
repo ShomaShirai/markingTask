@@ -30,6 +30,7 @@ def blend_and_get_image(
     alpha_fg: float,
     rotation_deg: float = 0.0,
     flip_code: int | None = None,
+    mode_key: str | None = None,
 ) -> Image.Image:
     if not (
         os.path.isfile(bg_path) and os.path.isfile(mid_path) and os.path.isfile(fg_path)
@@ -44,6 +45,7 @@ def blend_and_get_image(
         rotation_deg=rotation_deg,
         flip_code=flip_code,
         processing=DEFAULT_PROCESSING_CONFIG,
+        mode_key=mode_key,
     )
     out_rgb = out_bgr[:, :, ::-1]
     return Image.fromarray(out_rgb)
@@ -61,7 +63,9 @@ def resize_for_canvas(
     return pil_img
 
 
-def save_with_canvas(base_img: Image.Image, strokes: list[Stroke]) -> str | None:
+def save_with_canvas(
+    base_img: Image.Image, strokes: list[Stroke], mode_key: str | None = None
+) -> str | None:
     """キャンバス描画を合成して、Domain規則に従って保存する。"""
     if base_img is None:
         return None
@@ -79,6 +83,13 @@ def save_with_canvas(base_img: Image.Image, strokes: list[Stroke]) -> str | None
     time_str = datetime.now().strftime("%H%M%S%f")
     dir_name = rule.dir_format.format(username=username, date=date_str)
     out_dir = os.path.join(base_dir, dir_name)
+    # モード1..5の場合はサブディレクトリ（例: "1"）を作成
+    if mode_key and mode_key.startswith("task"):
+        try:
+            idx = int(mode_key.replace("task", ""))
+            out_dir = os.path.join(out_dir, str(idx))
+        except Exception:
+            pass
     os.makedirs(out_dir, exist_ok=True)
 
     filename = rule.file_format.format(time=time_str)
