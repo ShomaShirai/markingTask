@@ -68,6 +68,11 @@ class MainWindow(tk.Tk):
         self.modes_config = DEFAULT_MODES_CONFIG
         self.current_mode_key: str | None = None
         self.mode_buttons: dict[str, tk.Button] = {}
+        # モードごとの保存回数を管理
+        self.mode_counts: dict[str, int] = {}
+        # 進捗表示用の変数
+        self.progress_var = tk.StringVar(value="")
+        self.guidance_var = tk.StringVar(value="")
 
         self._build_ui()
         self._prompt_username()
@@ -181,6 +186,14 @@ class MainWindow(tk.Tk):
             bg="#4CAF50",
             fg="#FFFFFF",
         ).pack(side=tk.LEFT, padx=6)
+
+        # 進捗表示（保存/次への下）
+        progress_frame = tk.Frame(right)
+        progress_frame.pack(fill=tk.X, pady=(4, 0))
+        tk.Label(progress_frame, textvariable=self.progress_var).pack(side=tk.LEFT)
+        tk.Label(progress_frame, textvariable=self.guidance_var, fg="#666666").pack(
+            side=tk.LEFT, padx=12
+        )
         tk.Button(
             saveNextBtns,
             text="  次へ行く  ",
@@ -286,6 +299,13 @@ class MainWindow(tk.Tk):
                 messagebox.showwarning("計測保存", f"計測結果の保存に失敗: {e}")
             messagebox.showinfo("保存", f"保存しました: {path}")
 
+            # モードごとの保存回数を更新
+            if self.current_mode_key:
+                self.mode_counts[self.current_mode_key] = (
+                    self.mode_counts.get(self.current_mode_key, 0) + 1
+                )
+            self._update_progress_ui()
+
     def _prompt_username(self):
         try:
             # ウィンドウが表示可能になるまで待機（モーダル入力の前に可視化）
@@ -364,7 +384,12 @@ class MainWindow(tk.Tk):
     # --- 課題選択 ---
     def _select_mode(self, key: str):
         self.current_mode_key = key
+        # カウンタ初期化（未登録なら0）
+        if key not in self.mode_counts:
+            self.mode_counts[key] = 0
         self._update_task_buttons()
+        # 進捗UI更新
+        self._update_progress_ui()
         # モード変更＋ on_next と同等のランダム切替・計測開始・クリア・再ブレンドを実施
         self._on_next()
 
@@ -387,6 +412,29 @@ class MainWindow(tk.Tk):
             self.btn_mip.configure(bg="#FF4D4D", fg="#FFFFFF")
         elif active == "vein":
             self.btn_vein.configure(bg="#FF4D4D", fg="#FFFFFF")
+
+    def _get_mode_spec(self, key: str | None):
+        if not key or not hasattr(self, "modes_config"):
+            return None
+        for s in self.modes_config.modes:
+            if s.key == key:
+                return s
+        return None
+
+    def _update_progress_ui(self):
+        spec = self._get_mode_spec(self.current_mode_key)
+        count = self.mode_counts.get(self.current_mode_key, 0)
+        max_trials = getattr(spec, "max_trials", None) if spec else None
+        if isinstance(max_trials, int) and max_trials > 0:
+            self.progress_var.set(f"進捗: {count}/{max_trials}")
+            if count < max_trials:
+                self.guidance_var.set("描画をしてください")
+            else:
+                self.guidance_var.set("次のモードに進んでください")
+        else:
+            # max_trials未設定の場合でもメッセージは表示
+            self.progress_var.set("進捗: -")
+            self.guidance_var.set("描画をしてください")
 
     def _collect_strokes(self) -> list[Stroke]:
         # Canvasの画像中心座標と表示サイズから画像の左上（原点）を推定
