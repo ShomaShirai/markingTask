@@ -265,6 +265,10 @@ class MainWindow(tk.Tk):
         self.rotation_angle = float(random.choice(candidates))
         # 計測（次へ押下）
         self.metrics.start_task()
+        # 次へ実行時は描画モードをMIPにフォーカス（トグルせず強制設定）
+        self.current_draw_color = self.drawing_config.mip_line_color
+        self._update_mode_buttons(active="mip")
+        self.metrics.set_mode("mip")
         # 既存の手描きラインをクリア
         self._on_clear()
         self._on_blend()
