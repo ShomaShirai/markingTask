@@ -173,7 +173,10 @@ class MainWindow(tk.Tk):
                 text=spec.label,
                 command=lambda k=spec.key: self._select_mode(k),
             )
-            btn.pack(side=tk.LEFT, padx=4)
+            # 数字ラベル(1..5)はボタン自体の横幅を拡大
+            if str(spec.label).isdigit():
+                btn.configure(width=4)
+            btn.pack(side=tk.LEFT, padx=6)
             self.mode_buttons[spec.key] = btn
 
         # ボタン（右ペイン内）
