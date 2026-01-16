@@ -41,14 +41,14 @@ def get_internal_task_mode(ui_mode_key: str | None) -> str:
 
     Returns:
         実際に使用するタスクモード
-        - practiceの場合はそのまま"practice"
+        - practiceの場合は毎回ランダムにtask1〜5から選択
         - task1〜5の場合は、初回に割り当てられた内部タスク（固定）
     """
     global _ui_to_internal_task_mapping
 
-    # 練習モードの場合はそのまま返す
+    # 練習モードの場合は毎回ランダムにtask1〜5から選択
     if ui_mode_key == "practice":
-        return "practice"
+        return random.choice(["task1", "task2", "task3", "task4", "task5"])
 
     # マッピングが未初期化なら初期化
     if not _ui_to_internal_task_mapping:
