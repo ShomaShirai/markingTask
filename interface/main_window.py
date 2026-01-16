@@ -22,7 +22,7 @@ class MainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("3画像重畳マーキングタスク用ツール")
-        self.geometry("1350x820")
+        self.state("zoomed")
 
         # ファイルパスの初期値（assetsがあれば推測）
         base_dir = os.path.dirname(os.path.abspath(__file__))
