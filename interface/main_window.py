@@ -228,11 +228,16 @@ class MainWindow(tk.Tk):
         mid = self.mid_var.get().strip()
         fg = self.fg_var.get().strip()
         try:
-            # モードに応じたMIPカラーマップ上書き
+            # UIで選択された課題モードに対応する内部タスクを取得（固定マッピング）
+            from services.config_service import get_internal_task_mode
+
+            internal_mode = get_internal_task_mode(self.current_mode_key)
+
+            # 内部モードに応じたMIPカラーマップ上書き
             spec = None
-            if self.current_mode_key and hasattr(self, "modes_config"):
+            if internal_mode and hasattr(self, "modes_config"):
                 for s in self.modes_config.modes:
-                    if s.key == self.current_mode_key:
+                    if s.key == internal_mode:
                         spec = s
                         break
             mip_override = (
@@ -247,7 +252,7 @@ class MainWindow(tk.Tk):
                 float(self.alpha_fg.get()),
                 rotation_deg=self.rotation_angle,
                 flip_code=self.flip_code,
-                mode_key=self.current_mode_key,
+                mode_key=internal_mode,  # 固定された内部タスクを使用
                 mip_colormap_override=mip_override,
             )
             self._show_image(self.result_image)
