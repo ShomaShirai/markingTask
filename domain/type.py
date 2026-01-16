@@ -34,8 +34,7 @@ class ProcessingConfig:
 class DrawingConfig:
     """UI描画設定（Tkinter Canvas用カラー等）"""
 
-    mip_line_color: str = "#00C8FF"  # MIP用ライン色（シアン系）
-    vein_line_color: str = "#FF5050"  # 血管抽出用ライン色（赤系）
+    line_color: str = "#00C8FF"  # 描画用ライン色（シアン系）
     line_width: int = 3
 
 
@@ -64,18 +63,16 @@ class Stroke:
     rotation: float = 0.0
 
 
-# 計測レコード
+# 計測レコード（単一描画モード用）
 @dataclass
 class TimingRecord:
-    mode: str  # 'mip' | 'vein'
     start_latency_ms: int | None = None
     stroke_duration_ms: int | None = None
 
 
 @dataclass
 class SessionMetrics:
-    mip: TimingRecord
-    vein: TimingRecord
+    drawing: TimingRecord  # 単一の描画計測
 
 
 # 保存規則（Domain層で定義し、Services層で利用）

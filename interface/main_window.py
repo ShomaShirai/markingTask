@@ -158,14 +158,12 @@ class MainWindow(tk.Tk):
         ).pack(side=tk.LEFT, padx=4)
 
         # 描画モードボタン（右ペイン内）
-        draw_frame = tk.LabelFrame(right, text="描画モード")
+        draw_frame = tk.LabelFrame(right, text="描画")
         draw_frame.pack(fill=tk.X)
-        self.btn_mip = tk.Button(draw_frame, text="MIP", command=self._set_mode_mip)
-        self.btn_mip.pack(side=tk.LEFT, padx=4)
-        self.btn_vein = tk.Button(
-            draw_frame, text="血管抽出", command=self._set_mode_vein
+        self.btn_draw = tk.Button(
+            draw_frame, text="描画開始", command=self._toggle_draw_mode
         )
-        self.btn_vein.pack(side=tk.LEFT, padx=4)
+        self.btn_draw.pack(side=tk.LEFT, padx=4)
         self.btn_clear = tk.Button(draw_frame, text="クリア", command=self._on_clear)
         self.btn_clear.pack(side=tk.LEFT, padx=8)
 
@@ -211,8 +209,8 @@ class MainWindow(tk.Tk):
         ).pack(side=tk.LEFT, padx=6)
 
         # ボタンのデフォルト色を保持
-        self._default_btn_bg = self.btn_mip.cget("bg")
-        self._default_btn_fg = self.btn_mip.cget("fg")
+        self._default_btn_bg = self.btn_draw.cget("bg")
+        self._default_btn_fg = self.btn_draw.cget("fg")
 
         # 初期モード選択（先頭を既定とする）
         if self.modes_config.modes:
@@ -275,10 +273,9 @@ class MainWindow(tk.Tk):
         self.rotation_angle = float(random.choice(candidates))
         # 計測（次へ押下）
         self.metrics.start_task()
-        # 次へ実行時は描画モードをMIPにフォーカス（トグルせず強制設定）
-        self.current_draw_color = self.drawing_config.mip_line_color
-        self._update_mode_buttons(active="mip")
-        self.metrics.set_mode("mip")
+        # 次へ実行時は描画モードを有効化（強制設定）
+        self.current_draw_color = self.drawing_config.line_color
+        self._update_draw_button(active=True)
         # 既存の手描きラインをクリア
         self._on_clear()
         self._on_blend()
@@ -335,29 +332,26 @@ class MainWindow(tk.Tk):
         set_current_user(name)
 
     # --- 描画モードとキャンバスイベントハンドラ ---
-    def _set_mode_mip(self):
-        # すでにMIPモードならトグルで停止
-        if self.current_draw_color == self.drawing_config.mip_line_color:
+    def _toggle_draw_mode(self):
+        """描画モードのON/OFFを切り替え"""
+        if self.current_draw_color:
+            # 描画モードを停止
             self.current_draw_color = None
             self.last_xy = None
-            self._update_mode_buttons(active=None)
-            self.metrics.set_mode(None)
+            self._update_draw_button(active=False)
         else:
-            self.current_draw_color = self.drawing_config.mip_line_color
-            self._update_mode_buttons(active="mip")
-            self.metrics.set_mode("mip")
+            # 描画モードを開始
+            self.current_draw_color = self.drawing_config.line_color
+            self._update_draw_button(active=True)
 
-    def _set_mode_vein(self):
-        # すでに血管モードならトグルで停止
-        if self.current_draw_color == self.drawing_config.vein_line_color:
-            self.current_draw_color = None
-            self.last_xy = None
-            self._update_mode_buttons(active=None)
-            self.metrics.set_mode(None)
+    def _update_draw_button(self, active: bool):
+        """描画ボタンの表示を更新"""
+        if active:
+            self.btn_draw.configure(bg="#FF4D4D", fg="#FFFFFF", text="描画中")
         else:
-            self.current_draw_color = self.drawing_config.vein_line_color
-            self._update_mode_buttons(active="vein")
-            self.metrics.set_mode("vein")
+            self.btn_draw.configure(
+                bg=self._default_btn_bg, fg=self._default_btn_fg, text="描画開始"
+            )
 
     def _on_canvas_down(self, event):
         if not self.current_draw_color:
@@ -419,16 +413,6 @@ class MainWindow(tk.Tk):
             self.mode_buttons[self.current_mode_key].configure(
                 bg="#FF4D4D", fg="#FFFFFF"
             )
-
-    def _update_mode_buttons(self, active: str | None):
-        # すべてリセット
-        for btn in (self.btn_mip, self.btn_vein):
-            btn.configure(bg=self._default_btn_bg, fg=self._default_btn_fg)
-        # アクティブを強調（赤）
-        if active == "mip":
-            self.btn_mip.configure(bg="#FF4D4D", fg="#FFFFFF")
-        elif active == "vein":
-            self.btn_vein.configure(bg="#FF4D4D", fg="#FFFFFF")
 
     def _get_mode_spec(self, key: str | None):
         if not key or not hasattr(self, "modes_config"):
