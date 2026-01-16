@@ -25,6 +25,9 @@ class ProcessingConfig:
     vein_h: int = 30
     vein_s: int = 255
     mip_colormap: int = cv.COLORMAP_OCEAN
+    # 円形表示設定
+    circular_display: bool = True  # 円形表示を有効化
+    circular_bg_color: tuple = (34, 34, 34)  # 円の外側の背景色 (B, G, R)
 
 
 @dataclass

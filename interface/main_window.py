@@ -146,6 +146,17 @@ class MainWindow(tk.Tk):
             length=100,
         ).grid(row=1, column=1, padx=4)
 
+        # 円形表示切り替えボタン（右ペイン内）
+        display_frame = tk.LabelFrame(right, text="表示設定")
+        display_frame.pack(fill=tk.X, pady=(8, 0))
+        self.circular_display_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+            display_frame,
+            text="円形表示",
+            variable=self.circular_display_var,
+            command=self._toggle_circular_display,
+        ).pack(side=tk.LEFT, padx=4)
+
         # 描画モードボタン（右ペイン内）
         draw_frame = tk.LabelFrame(right, text="描画モード")
         draw_frame.pack(fill=tk.X)
@@ -436,6 +447,15 @@ class MainWindow(tk.Tk):
             # max_trials未設定の場合でもメッセージは表示
             self.progress_var.set("進捗: -")
             self.guidance_var.set("描画をしてください")
+
+    def _toggle_circular_display(self):
+        """円形表示のON/OFF切り替え"""
+        # ProcessingConfigを更新
+        from services.config_service import DEFAULT_PROCESSING_CONFIG
+
+        DEFAULT_PROCESSING_CONFIG.circular_display = self.circular_display_var.get()
+        # 画像を再ブレンドして表示
+        self._on_blend()
 
     def _collect_strokes(self) -> list[Stroke]:
         # Canvasの画像中心座標と表示サイズから画像の左上（原点）を推定
