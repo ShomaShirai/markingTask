@@ -71,7 +71,7 @@ def colorize_mip(mip_img: np.ndarray, colormap: int) -> np.ndarray:
         mip_u8 = mip_gray
     else:
         mip_u8 = cv.normalize(mip_gray, None, 0, 255, cv.NORM_MINMAX).astype(np.uint8)
-    clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    clahe = cv.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
     mip_clahe = clahe.apply(mip_u8)
     # カラーマップ
     mip_color = cv.applyColorMap(mip_clahe, colormap)

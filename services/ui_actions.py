@@ -88,7 +88,10 @@ def save_with_canvas(
     out_dir = os.path.join(base_dir, dir_name)
 
     # UIモードを内部タスクに変換
-    internal_task = get_internal_task_mode(mode_key)
+    if mode_key != "practice":
+        internal_task = get_internal_task_mode(mode_key)
+    else:
+        internal_task = "practice"
 
     # モード1..5の場合はサブディレクトリ（例: "1"）を作成
     if internal_task and internal_task.startswith("task"):
