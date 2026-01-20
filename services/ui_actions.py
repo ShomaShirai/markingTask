@@ -9,6 +9,7 @@ from process.blend import blend_three
 from process.draw import compose_strokes_on_image
 from domain.type import BlendParams, SaveRule, Stroke, ProcessingConfig
 from services.user_service import get_current_user
+from services.config_service import get_internal_task_mode
 
 
 DEFAULT_PROCESSING_CONFIG = ProcessingConfig()
@@ -85,10 +86,14 @@ def save_with_canvas(
     time_str = datetime.now().strftime("%H%M%S%f")
     dir_name = rule.dir_format.format(username=username, date=date_str)
     out_dir = os.path.join(base_dir, dir_name)
+
+    # UIモードを内部タスクに変換
+    internal_task = get_internal_task_mode(mode_key)
+
     # モード1..5の場合はサブディレクトリ（例: "1"）を作成
-    if mode_key and mode_key.startswith("task"):
+    if internal_task and internal_task.startswith("task"):
         try:
-            idx = int(mode_key.replace("task", ""))
+            idx = int(internal_task.replace("task", ""))
             out_dir = os.path.join(out_dir, str(idx))
         except Exception:
             pass
