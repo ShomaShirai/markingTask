@@ -177,15 +177,21 @@ def aggregate_all_users(base_dir: str = ".") -> dict:
                     stats["stroke_duration_ms"]["mean"]
                 )
 
-    # 全ユーザーの平均を計算
+    # 全ユーザーの平均と標準偏差を計算
     all_users_stats = {}
     for task_key, data in task_aggregation.items():
         all_users_stats[task_key] = {
             "start_latency_ms_mean": statistics.mean(data["start_latency_ms"])
             if data["start_latency_ms"]
             else None,
+            "start_latency_ms_stdev": statistics.stdev(data["start_latency_ms"])
+            if len(data["start_latency_ms"]) > 1
+            else None,
             "stroke_duration_ms_mean": statistics.mean(data["stroke_duration_ms"])
             if data["stroke_duration_ms"]
+            else None,
+            "stroke_duration_ms_stdev": statistics.stdev(data["stroke_duration_ms"])
+            if len(data["stroke_duration_ms"]) > 1
             else None,
             "user_count": len(data["start_latency_ms"]),
         }
@@ -222,9 +228,19 @@ def print_results(results: dict):
                 else "  開始潜時（平均）: データなし"
             )
             print(
+                f"  開始潜時（標準偏差）: {stats['start_latency_ms_stdev']:.1f} ms"
+                if stats["start_latency_ms_stdev"]
+                else "  開始潜時（標準偏差）: -"
+            )
+            print(
                 f"  描画時間（平均）: {stats['stroke_duration_ms_mean']:.1f} ms"
                 if stats["stroke_duration_ms_mean"]
                 else "  描画時間（平均）: データなし"
+            )
+            print(
+                f"  描画時間（標準偏差）: {stats['stroke_duration_ms_stdev']:.1f} ms"
+                if stats["stroke_duration_ms_stdev"]
+                else "  描画時間（標準偏差）: -"
             )
 
     # 各ユーザーの詳細を表示
