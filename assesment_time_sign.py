@@ -408,10 +408,10 @@ def perform_friedman_test(users_data: dict, metric: str) -> dict:
 
     result = {
         "test": "Friedman",
-        "statistic": friedman_stat,
-        "p_value": friedman_p,
-        "n_subjects": n_subjects,
-        "significant": friedman_p < 0.05,
+        "statistic": float(friedman_stat),
+        "p_value": float(friedman_p),
+        "n_subjects": int(n_subjects),
+        "significant": bool(friedman_p < 0.05),
     }
 
     if friedman_p < 0.05:
@@ -464,10 +464,10 @@ def perform_post_hoc_tests(data_arrays: list, tasks: list) -> dict:
         result_item = {
             "task1": task1,
             "task2": task2,
-            "statistic": stat,
-            "p_value": p_value,
-            "significant": is_significant,
-            "mean_difference": mean_diff,
+            "statistic": float(stat),
+            "p_value": float(p_value),
+            "significant": bool(is_significant),
+            "mean_difference": float(mean_diff),
         }
         post_hoc_results.append(result_item)
 

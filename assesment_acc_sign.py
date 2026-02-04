@@ -218,14 +218,14 @@ def perform_statistical_tests(results: dict) -> dict:
 
     statistical_results = {
         "test_type": "Friedman test (対応のあるノンパラメトリック検定)",
-        "n_subjects": n_subjects,
+        "n_subjects": int(n_subjects),
         "n_tasks": len(valid_tasks),
         "tasks": valid_tasks,
         "descriptive_stats": descriptive_stats,
         "friedman_test": {
             "statistic": float(friedman_stat),
             "p_value": float(friedman_p),
-            "significant": friedman_p < 0.05,
+            "significant": bool(friedman_p < 0.05),
         },
     }
 
@@ -249,7 +249,7 @@ def perform_statistical_tests(results: dict) -> dict:
                         "task2": task2,
                         "statistic": float(stat),
                         "p_value": float(p_value),
-                        "significant_bonferroni": p_value < bonferroni_alpha,
+                        "significant_bonferroni": bool(p_value < bonferroni_alpha),
                         "mean_diff": float(
                             np.mean(data_matrix[:, i]) - np.mean(data_matrix[:, j])
                         ),
