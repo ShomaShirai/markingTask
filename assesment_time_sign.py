@@ -13,6 +13,12 @@ import statistics
 import numpy as np
 from scipy import stats
 from itertools import combinations
+import matplotlib.pyplot as plt
+import matplotlib
+
+# 日本語フォント設定
+matplotlib.rcParams["font.sans-serif"] = ["MS Gothic", "Yu Gothic", "Meiryo"]
+matplotlib.rcParams["axes.unicode_minus"] = False
 
 
 def find_result_directories(base_dir: str = ".") -> list[Path]:
@@ -474,6 +480,126 @@ def perform_post_hoc_tests(data_arrays: list, tasks: list) -> dict:
     return post_hoc_results
 
 
+def create_boxplots(results: dict, base_dir: str, timestamp: str):
+    """
+    開始潜時と描画時間の箱ひげ図を作成
+
+    Args:
+        results: 集計結果
+        base_dir: 出力ディレクトリ
+        timestamp: タイムスタンプ
+    """
+    # 各タスクのデータを抽出
+    task_keys = [f"task{i}" for i in range(1, 6)]
+    start_latency_data = defaultdict(list)
+    stroke_duration_data = defaultdict(list)
+
+    for username, user_stats in results.items():
+        if username == "__all_users__":
+            continue
+
+        for task_key in task_keys:
+            if task_key in user_stats:
+                sl_mean = user_stats[task_key]["start_latency_ms"]["mean"]
+                sd_mean = user_stats[task_key]["stroke_duration_ms"]["mean"]
+
+                if sl_mean is not None:
+                    start_latency_data[task_key].append(sl_mean)
+                if sd_mean is not None:
+                    stroke_duration_data[task_key].append(sd_mean)
+
+    # 開始潜時の箱ひげ図
+    _create_single_boxplot(
+        start_latency_data,
+        task_keys,
+        "開始潜時 (ms)",
+        "タスク別開始潜時の分布",
+        os.path.join(base_dir, f"time_start_latency_boxplot_{timestamp}.png"),
+    )
+
+    # 描画時間の箱ひげ図
+    _create_single_boxplot(
+        stroke_duration_data,
+        task_keys,
+        "描画時間 (ms)",
+        "タスク別描画時間の分布",
+        os.path.join(base_dir, f"time_stroke_duration_boxplot_{timestamp}.png"),
+    )
+
+
+def _create_single_boxplot(
+    task_data: dict, task_keys: list, ylabel: str, title: str, output_path: str
+):
+    """
+    1つの指標に対する箱ひげ図を作成
+
+    Args:
+        task_data: タスクごとのデータ
+        task_keys: タスクキーのリスト
+        ylabel: Y軸ラベル
+        title: グラフタイトル
+        output_path: 出力ファイルパス
+    """
+    # データが存在するタスクのみをプロット
+    valid_tasks = [k for k in task_keys if k in task_data and len(task_data[k]) > 0]
+
+    if not valid_tasks:
+        print(f"箱ひげ図を作成するデータがありません: {title}")
+        return
+
+    # 箱ひげ図の作成
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # データとラベルを準備
+    data_to_plot = [task_data[k] for k in valid_tasks]
+    labels = [k.upper().replace("TASK", "タスク") for k in valid_tasks]
+
+    # 箱ひげ図を描画
+    bp = ax.boxplot(
+        data_to_plot,
+        labels=labels,
+        patch_artist=True,
+        showmeans=True,
+        meanprops=dict(
+            marker="D", markerfacecolor="red", markeredgecolor="red", markersize=6
+        ),
+        medianprops=dict(color="blue", linewidth=2),
+        boxprops=dict(facecolor="lightgreen", alpha=0.7),
+        whiskerprops=dict(linewidth=1.5),
+        capprops=dict(linewidth=1.5),
+        flierprops=dict(marker="o", markerfacecolor="gray", markersize=5, alpha=0.5),
+    )
+
+    # グラフの装飾
+    ax.set_ylabel(ylabel, fontsize=12)
+    ax.set_xlabel("タスク", fontsize=12)
+    ax.set_title(title, fontsize=14, fontweight="bold")
+    ax.grid(True, axis="y", alpha=0.3, linestyle="--")
+
+    # 平均値と中央値の凡例を追加
+    from matplotlib.lines import Line2D
+
+    legend_elements = [
+        Line2D(
+            [0],
+            [0],
+            marker="D",
+            color="w",
+            markerfacecolor="red",
+            markersize=8,
+            label="平均値",
+        ),
+        Line2D([0], [0], color="blue", linewidth=2, label="中央値"),
+    ]
+    ax.legend(handles=legend_elements, loc="upper right", fontsize=10)
+
+    # レイアウトを調整して保存
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    print(f"箱ひげ図を保存しました: {output_path}")
+    plt.close()
+
+
 def main():
     """メイン関数"""
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -495,6 +621,9 @@ def main():
     from datetime import datetime
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # 箱ひげ図を作成
+    create_boxplots(results, base_dir, timestamp)
 
     # 分析結果と統計検定結果を統合
     full_results = {"analysis": results, "statistical_tests": test_results}

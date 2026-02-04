@@ -12,6 +12,12 @@ from datetime import datetime
 import statistics
 from scipy import stats
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+
+# 日本語フォント設定
+matplotlib.rcParams["font.sans-serif"] = ["MS Gothic", "Yu Gothic", "Meiryo"]
+matplotlib.rcParams["axes.unicode_minus"] = False
 
 
 def find_result_directories(base_dir: str = ".") -> list[Path]:
@@ -401,6 +407,89 @@ def save_results_json(results: dict, output_path: str):
     print(f"\n結果をJSONファイルに保存しました: {output_path}")
 
 
+def create_boxplot(results: dict, output_path: str):
+    """
+    各タスクの正答率の箱ひげ図を作成
+
+    Args:
+        results: 集計結果
+        output_path: 出力ファイルパス
+    """
+    # 各タスクのデータを抽出
+    task_data = defaultdict(list)
+    task_keys = [f"task{i}" for i in range(1, 6)]
+
+    for username, user_stats in results.items():
+        if username == "__all_users__":
+            continue
+
+        for task_key in task_keys:
+            if task_key in user_stats:
+                # 正答率をパーセンテージに変換
+                accuracy_percent = user_stats[task_key]["accuracy"] * 100
+                task_data[task_key].append(accuracy_percent)
+
+    # データが存在するタスクのみをプロット
+    valid_tasks = [k for k in task_keys if k in task_data and len(task_data[k]) > 0]
+
+    if not valid_tasks:
+        print("箱ひげ図を作成するデータがありません。")
+        return
+
+    # 箱ひげ図の作成
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    # データとラベルを準備
+    data_to_plot = [task_data[k] for k in valid_tasks]
+    labels = [k.upper().replace("TASK", "タスク") for k in valid_tasks]
+
+    # 箱ひげ図を描画
+    bp = ax.boxplot(
+        data_to_plot,
+        labels=labels,
+        patch_artist=True,
+        showmeans=True,
+        meanprops=dict(
+            marker="D", markerfacecolor="red", markeredgecolor="red", markersize=6
+        ),
+        medianprops=dict(color="blue", linewidth=2),
+        boxprops=dict(facecolor="lightblue", alpha=0.7),
+        whiskerprops=dict(linewidth=1.5),
+        capprops=dict(linewidth=1.5),
+        flierprops=dict(marker="o", markerfacecolor="gray", markersize=5, alpha=0.5),
+    )
+
+    # グラフの装飾
+    ax.set_ylabel("正答率 (%)", fontsize=12)
+    ax.set_xlabel("タスク", fontsize=12)
+    ax.set_title("タスク別正答率の分布", fontsize=14, fontweight="bold")
+    ax.grid(True, axis="y", alpha=0.3, linestyle="--")
+    ax.set_ylim(0, 105)
+
+    # 平均値と中央値の凡例を追加
+    from matplotlib.lines import Line2D
+
+    legend_elements = [
+        Line2D(
+            [0],
+            [0],
+            marker="D",
+            color="w",
+            markerfacecolor="red",
+            markersize=8,
+            label="平均値",
+        ),
+        Line2D([0], [0], color="blue", linewidth=2, label="中央値"),
+    ]
+    ax.legend(handles=legend_elements, loc="lower right", fontsize=10)
+
+    # レイアウトを調整して保存
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    print(f"\n箱ひげ図を保存しました: {output_path}")
+    plt.close()
+
+
 def main():
     """メイン関数"""
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -420,8 +509,12 @@ def main():
     stat_results = perform_statistical_tests(results)
     print_statistical_results(stat_results)
 
-    # 結果をJSONファイルに保存
+    # 箱ひげ図を作成
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    boxplot_path = os.path.join(base_dir, f"accuracy_boxplot_{timestamp}.png")
+    create_boxplot(results, boxplot_path)
+
+    # 結果をJSONファイルに保存
     json_path = os.path.join(base_dir, f"accuracy_results_{timestamp}.json")
     combined_results = {
         "aggregated_data": results,
