@@ -604,6 +604,10 @@ def main():
     """メイン関数"""
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
+    # resultsディレクトリを作成
+    results_dir = os.path.join(base_dir, "results")
+    os.makedirs(results_dir, exist_ok=True)
+
     print("課題結果の分析を開始します...")
 
     results = aggregate_all_users(base_dir)
@@ -622,13 +626,14 @@ def main():
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # 箱ひげ図を作成
-    create_boxplots(results, base_dir, timestamp)
+    # 箱ひげ図を作成（resultsディレクトリに保存）
+    create_boxplots(results, results_dir, timestamp)
 
     # 分析結果と統計検定結果を統合
     full_results = {"analysis": results, "statistical_tests": test_results}
 
-    json_path = os.path.join(base_dir, f"analysis_results_{timestamp}.json")
+    # JSONファイルもresultsディレクトリに保存
+    json_path = os.path.join(results_dir, f"analysis_results_{timestamp}.json")
     save_results_json(full_results, json_path)
 
     print("\n" + "=" * 80)

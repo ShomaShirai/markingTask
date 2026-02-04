@@ -6,3 +6,4 @@ imutils
 pyqt5
 pillow
 opencv-contrib-python
+matplotlib

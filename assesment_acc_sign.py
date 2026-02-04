@@ -494,6 +494,10 @@ def main():
     """メイン関数"""
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
+    # resultsディレクトリを作成
+    results_dir = os.path.join(base_dir, "results")
+    os.makedirs(results_dir, exist_ok=True)
+
     print("正答率の分析を開始します...")
 
     results = aggregate_all_users(base_dir)
@@ -509,13 +513,13 @@ def main():
     stat_results = perform_statistical_tests(results)
     print_statistical_results(stat_results)
 
-    # 箱ひげ図を作成
+    # 箱ひげ図を作成（resultsディレクトリに保存）
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    boxplot_path = os.path.join(base_dir, f"accuracy_boxplot_{timestamp}.png")
+    boxplot_path = os.path.join(results_dir, f"accuracy_boxplot_{timestamp}.png")
     create_boxplot(results, boxplot_path)
 
-    # 結果をJSONファイルに保存
-    json_path = os.path.join(base_dir, f"accuracy_results_{timestamp}.json")
+    # 結果をJSONファイルに保存（resultsディレクトリに保存）
+    json_path = os.path.join(results_dir, f"accuracy_results_{timestamp}.json")
     combined_results = {
         "aggregated_data": results,
         "statistical_tests": stat_results,
